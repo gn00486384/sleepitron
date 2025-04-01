@@ -40,10 +40,10 @@ const LoginForm = () => {
             </label>
             <Input
               id="email"
-              type="email"
+              type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="example@email.com"
+              placeholder="輸入您的帳號"
               required
             />
           </div>
@@ -76,7 +76,6 @@ const LoginForm = () => {
           </Button>
           <div className="text-center text-sm">
             <span className="text-muted-foreground">還沒有帳戶? </span>
-            {/* This would link to registration in a real app */}
             <a href="#" className="text-sleep hover:underline">
               註冊
             </a>

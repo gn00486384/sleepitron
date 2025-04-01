@@ -24,9 +24,6 @@ const Index = () => {
           <p className="text-muted-foreground">您的睡眠和用藥管理助手</p>
         </div>
         <LoginForm />
-        <p className="text-center text-xs text-muted-foreground mt-8">
-          使用 demo@sleepitron.com / password 登入體驗
-        </p>
       </div>
     </div>
   );

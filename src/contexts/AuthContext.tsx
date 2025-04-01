@@ -26,8 +26,8 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const MOCK_USERS: User[] = [
   {
     id: "1",
-    username: "demo",
-    email: "demo@sleepitron.com",
+    username: "shin",
+    email: "shin@1027",
   }
 ];
 
@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // In a real app, this would validate against a backend
       const foundUser = MOCK_USERS.find(u => u.email === email);
-      if (foundUser && password === "password") {
+      if (foundUser && password === "0618") {
         setUser(foundUser);
         localStorage.setItem("sleepitron_user", JSON.stringify(foundUser));
         toast.success("登入成功");
