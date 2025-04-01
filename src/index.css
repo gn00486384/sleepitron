@@ -46,42 +46,42 @@
   }
 
   .dark {
-    --background: 30 30 60;
-    --foreground: 245 245 250;
+    --background: 20 36 75; /* Dark blue background */
+    --foreground: 179 217 255; /* Light blue text */
 
-    --card: 40 40 70;
-    --card-foreground: 245 245 250;
+    --card: 30 46 85; /* Slightly lighter dark blue for cards */
+    --card-foreground: 179 217 255; /* Light blue text */
 
-    --popover: 40 40 70;
-    --popover-foreground: 245 245 250;
+    --popover: 30 46 85;
+    --popover-foreground: 179 217 255;
 
-    --primary: 155 135 245;
+    --primary: 100 160 255; /* Adjusted to a blue tone */
     --primary-foreground: 255 255 255;
 
-    --secondary: 70 70 100;
-    --secondary-foreground: 245 245 250;
+    --secondary: 40 56 95;
+    --secondary-foreground: 179 217 255;
 
-    --muted: 50 50 80;
-    --muted-foreground: 180 180 210;
+    --muted: 35 51 90;
+    --muted-foreground: 130 180 230;
 
-    --accent: 60 60 90;
-    --accent-foreground: 245 245 250;
+    --accent: 45 61 100;
+    --accent-foreground: 179 217 255;
 
     --destructive: 230 60 80;
-    --destructive-foreground: 245 245 250;
+    --destructive-foreground: 179 217 255;
 
-    --border: 60 60 90;
-    --input: 60 60 90;
-    --ring: 155 135 245;
+    --border: 45 61 100;
+    --input: 45 61 100;
+    --ring: 100 160 255;
 
-    --sidebar-background: 40 40 70;
-    --sidebar-foreground: 245 245 250;
-    --sidebar-primary: 155 135 245;
+    --sidebar-background: 25 41 80;
+    --sidebar-foreground: 179 217 255;
+    --sidebar-primary: 100 160 255;
     --sidebar-primary-foreground: 255 255 255;
-    --sidebar-accent: 60 60 90;
-    --sidebar-accent-foreground: 245 245 250;
-    --sidebar-border: 60 60 90;
-    --sidebar-ring: 155 135 245;
+    --sidebar-accent: 45 61 100;
+    --sidebar-accent-foreground: 179 217 255;
+    --sidebar-border: 45 61 100;
+    --sidebar-ring: 100 160 255;
   }
 }
 
