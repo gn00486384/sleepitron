@@ -1,10 +1,12 @@
 
 import { SleepRecord } from "../../contexts/DataContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bed, Clock, User, Calendar } from "lucide-react";
+import { Bed, Clock, User, Calendar, Timer } from "lucide-react";
 import {
   calculateAverageSleepQuality,
   getMostFrequentPersonality,
+  calculateAverageSleepDuration,
+  formatDuration,
 } from "../../utils/dateUtils";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -22,6 +24,7 @@ const SleepStatsSummary = ({
 }: SleepStatsSummaryProps) => {
   const averageQuality = calculateAverageSleepQuality(sleepRecords);
   const mostFrequentPersonality = getMostFrequentPersonality(sleepRecords);
+  const totalSleepDuration = calculateAverageSleepDuration(sleepRecords);
 
   const getQualityColor = (quality: number) => {
     if (quality >= 8) return "text-green-500";
@@ -38,7 +41,7 @@ const SleepStatsSummary = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
           <div className="flex items-center space-x-4 p-4 rounded-lg bg-secondary/50">
             <div className="p-2 rounded-full bg-sleep text-white">
               <Bed className="h-5 w-5" />
@@ -46,6 +49,18 @@ const SleepStatsSummary = ({
             <div>
               <p className="text-sm text-muted-foreground">記錄數</p>
               <p className="text-2xl font-semibold">{sleepRecords.length}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-4 p-4 rounded-lg bg-secondary/50">
+            <div className="p-2 rounded-full bg-sleep text-white">
+              <Timer className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">平均睡眠時長</p>
+              <p className="text-2xl font-semibold">
+                {formatDuration(totalSleepDuration)}
+              </p>
             </div>
           </div>
 

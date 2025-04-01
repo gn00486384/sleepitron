@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useData } from "../contexts/DataContext";
 import AnalysisDateRangePicker from "../components/analysis/AnalysisDateRangePicker";
 import SleepQualityChart from "../components/analysis/SleepQualityChart";
+import SleepDurationChart from "../components/analysis/SleepDurationChart";
 import PersonalityDistributionChart from "../components/analysis/PersonalityDistributionChart";
 import SleepStatsSummary from "../components/analysis/SleepStatsSummary";
 import { subDays } from "date-fns";
@@ -46,7 +47,11 @@ const AnalysisPage = () => {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <SleepDurationChart sleepRecords={filteredRecords} />
         <SleepQualityChart sleepRecords={filteredRecords} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6">
         <PersonalityDistributionChart sleepRecords={filteredRecords} />
       </div>
 

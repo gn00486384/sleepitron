@@ -34,6 +34,46 @@ export const calculateSleepDuration = (sleepTime: string, wakeTime: string, date
   }
 };
 
+// Calculate sleep duration in minutes
+export const calculateSleepDurationMinutes = (sleepTime: string, wakeTime: string, date: string): number => {
+  try {
+    const sleepDate = new Date(`${date}T${sleepTime}:00`);
+    let wakeDate = new Date(`${date}T${wakeTime}:00`);
+    
+    // If wake time is before sleep time, assume it's the next day
+    if (wakeDate < sleepDate) {
+      wakeDate = new Date(wakeDate.setDate(wakeDate.getDate() + 1));
+    }
+    
+    return differenceInMinutes(wakeDate, sleepDate);
+  } catch (e) {
+    console.error("Error calculating sleep duration minutes:", e);
+    return 0;
+  }
+};
+
+// Calculate average sleep duration in minutes
+export const calculateAverageSleepDuration = (sleepRecords: SleepRecord[]): number => {
+  if (sleepRecords.length === 0) return 0;
+  
+  const totalMinutes = sleepRecords.reduce((acc, record) => {
+    return acc + calculateSleepDurationMinutes(record.sleepTime, record.wakeTime, record.date);
+  }, 0);
+  
+  return totalMinutes / sleepRecords.length;
+};
+
+// Format duration in minutes to hours and minutes
+export const formatDuration = (minutes: number): string => {
+  const hours = Math.floor(minutes / 60);
+  const mins = Math.round(minutes % 60);
+  
+  if (mins === 0) {
+    return `${hours}小時`;
+  }
+  return `${hours}小時${mins}分鐘`;
+};
+
 // Get sleep records within a date range
 export const getSleepRecordsInRange = (
   sleepRecords: SleepRecord[], 
