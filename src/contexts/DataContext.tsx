@@ -124,8 +124,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Fetch doctor visits from Supabase
   const fetchDoctorVisits = async () => {
     try {
+      // Use type assertion to tell TypeScript that this is a valid table
       const { data, error } = await supabase
-        .from('doctor_visits')
+        .from('doctor_visits' as any)
         .select('*')
         .order('date', { ascending: false });
 
@@ -133,7 +134,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      const formattedVisits: DoctorVisit[] = data.map(visit => ({
+      // Transform the data to match our DoctorVisit interface
+      const formattedVisits: DoctorVisit[] = data.map((visit: any) => ({
         id: visit.id,
         date: visit.date,
         notes: visit.notes,
@@ -343,11 +345,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Doctor visit functions with Supabase integration
+  // Doctor visit functions with Supabase integration (using type assertions to fix TypeScript errors)
   const addDoctorVisit = async (visit: Omit<DoctorVisit, "id">) => {
     try {
-      const { data, error } = await supabase
-        .from('doctor_visits')
+      // Use type assertion to handle the doctor_visits table
+      const { data, error } = await (supabase
+        .from('doctor_visits' as any)
         .insert({
           date: visit.date,
           notes: visit.notes,
@@ -355,7 +358,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           follow_up_date: visit.followUpDate
         })
         .select('id')
-        .single();
+        .single() as any);
 
       if (error) {
         throw error;
@@ -376,8 +379,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateDoctorVisit = async (id: string, visit: Partial<DoctorVisit>) => {
     try {
-      const { error } = await supabase
-        .from('doctor_visits')
+      // Use type assertion to handle the doctor_visits table
+      const { error } = await (supabase
+        .from('doctor_visits' as any)
         .update({
           date: visit.date,
           notes: visit.notes,
@@ -385,7 +389,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           follow_up_date: visit.followUpDate,
           updated_at: new Date().toISOString()
         })
-        .eq('id', id);
+        .eq('id', id) as any);
 
       if (error) {
         throw error;
@@ -403,10 +407,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const deleteDoctorVisit = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('doctor_visits')
+      // Use type assertion to handle the doctor_visits table
+      const { error } = await (supabase
+        .from('doctor_visits' as any)
         .delete()
-        .eq('id', id);
+        .eq('id', id) as any);
 
       if (error) {
         throw error;
