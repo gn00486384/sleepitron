@@ -1,7 +1,7 @@
-
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { toast } from "sonner";
 import { useAuth } from "./AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 // Types
 export interface SleepRecord {
@@ -37,12 +37,12 @@ export interface DoctorVisit {
 interface DataContextType {
   sleepRecords: SleepRecord[];
   doctorVisits: DoctorVisit[];
-  addSleepRecord: (record: Omit<SleepRecord, "id">) => void;
-  updateSleepRecord: (id: string, record: Partial<SleepRecord>) => void;
-  deleteSleepRecord: (id: string) => void;
-  addPersonalityRecord: (record: Omit<PersonalityRecord, "id">) => void;
-  updatePersonalityRecord: (id: string, record: Partial<PersonalityRecord>) => void;
-  deletePersonalityRecord: (id: string) => void;
+  addSleepRecord: (record: Omit<SleepRecord, "id">) => Promise<string | undefined>;
+  updateSleepRecord: (id: string, record: Partial<SleepRecord>) => Promise<void>;
+  deleteSleepRecord: (id: string) => Promise<void>;
+  addPersonalityRecord: (record: Omit<PersonalityRecord, "id">) => Promise<string | undefined>;
+  updatePersonalityRecord: (id: string, record: Partial<PersonalityRecord>) => Promise<void>;
+  deletePersonalityRecord: (id: string) => Promise<void>;
   addDoctorVisit: (visit: Omit<DoctorVisit, "id">) => void;
   updateDoctorVisit: (id: string, visit: Partial<DoctorVisit>) => void;
   deleteDoctorVisit: (id: string) => void;
@@ -52,48 +52,7 @@ interface DataContextType {
 // Create the context
 export const DataContext = createContext<DataContextType | undefined>(undefined);
 
-// Mock initial data
-const MOCK_SLEEP_RECORDS: SleepRecord[] = [
-  {
-    id: "1",
-    date: "2023-09-10",
-    sleepTime: "22:30",
-    wakeTime: "07:15",
-    quality: 8,
-    notes: "安眠藥服用後很快入睡",
-    personalities: [
-      {
-        id: "p1",
-        sleepRecordId: "1",
-        personality: "宇辰",
-        startTime: "19:00",
-        endTime: "22:00",
-        notes: "情緒穩定",
-      }
-    ],
-    medications: "安眠藥 5mg",
-  },
-  {
-    id: "2",
-    date: "2023-09-11",
-    sleepTime: "23:00",
-    wakeTime: "06:45",
-    quality: 6,
-    notes: "睡眠中醒來一次",
-    personalities: [
-      {
-        id: "p2",
-        sleepRecordId: "2",
-        personality: "空",
-        startTime: "18:00",
-        endTime: "23:00",
-        notes: "有些焦慮",
-      }
-    ],
-    medications: "安眠藥 5mg",
-  },
-];
-
+// Mock initial data for doctor visits
 const MOCK_DOCTOR_VISITS: DoctorVisit[] = [
   {
     id: "1",
@@ -111,109 +70,275 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [doctorVisits, setDoctorVisits] = useState<DoctorVisit[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load data when authenticated
+  // Load data when mounted
   useEffect(() => {
-    if (isAuthenticated) {
-      // In a real app, this would fetch from an API
-      const storedSleepRecords = localStorage.getItem("sleepitron_sleep_records");
-      const storedDoctorVisits = localStorage.getItem("sleepitron_doctor_visits");
-      
-      setSleepRecords(storedSleepRecords ? JSON.parse(storedSleepRecords) : MOCK_SLEEP_RECORDS);
-      setDoctorVisits(storedDoctorVisits ? JSON.parse(storedDoctorVisits) : MOCK_DOCTOR_VISITS);
-    } else {
-      setSleepRecords([]);
-      setDoctorVisits([]);
-    }
-    setLoading(false);
-  }, [isAuthenticated]);
+    fetchSleepRecords();
+    
+    // For now, we'll keep doctor visits in localStorage
+    const storedDoctorVisits = localStorage.getItem("sleepitron_doctor_visits");
+    setDoctorVisits(storedDoctorVisits ? JSON.parse(storedDoctorVisits) : MOCK_DOCTOR_VISITS);
+    
+    // Later, we can add a similar function for doctor visits using Supabase
+  }, []);
 
-  // Save data to localStorage whenever it changes
+  // Fetch sleep records from Supabase
+  const fetchSleepRecords = async () => {
+    setLoading(true);
+    try {
+      const { data: sleepData, error: sleepError } = await supabase
+        .from('sleep_records')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (sleepError) {
+        throw sleepError;
+      }
+
+      const { data: personalityData, error: personalityError } = await supabase
+        .from('personality_records')
+        .select('*');
+
+      if (personalityError) {
+        throw personalityError;
+      }
+
+      // Map personality records to their sleep records
+      const sleepRecordsWithPersonalities = sleepData.map(sleep => {
+        const personalities = personalityData
+          .filter(p => p.sleep_record_id === sleep.id)
+          .map(p => ({
+            id: p.id,
+            sleepRecordId: p.sleep_record_id,
+            personality: p.personality,
+            startTime: p.start_time,
+            endTime: p.end_time,
+            notes: p.notes || ''
+          }));
+
+        return {
+          id: sleep.id,
+          date: sleep.date,
+          sleepTime: sleep.sleep_time,
+          wakeTime: sleep.wake_time,
+          quality: sleep.quality,
+          notes: sleep.notes || '',
+          medications: sleep.medications || '',
+          personalities
+        };
+      });
+
+      setSleepRecords(sleepRecordsWithPersonalities);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error('資料載入失敗');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Save doctor visits to localStorage whenever it changes
   useEffect(() => {
-    if (isAuthenticated) {
-      localStorage.setItem("sleepitron_sleep_records", JSON.stringify(sleepRecords));
+    if (doctorVisits.length > 0) {
       localStorage.setItem("sleepitron_doctor_visits", JSON.stringify(doctorVisits));
     }
-  }, [sleepRecords, doctorVisits, isAuthenticated]);
+  }, [doctorVisits]);
 
   // Sleep record functions
-  const addSleepRecord = (record: Omit<SleepRecord, "id">) => {
-    const newRecord: SleepRecord = {
-      ...record,
-      id: Math.random().toString(36).substring(2, 9),
-      personalities: record.personalities || [],
-    };
-    setSleepRecords(prev => [...prev, newRecord]);
-    toast.success("睡眠記錄已添加");
+  const addSleepRecord = async (record: Omit<SleepRecord, "id">) => {
+    try {
+      const { data, error } = await supabase
+        .from('sleep_records')
+        .insert({
+          date: record.date,
+          sleep_time: record.sleepTime,
+          wake_time: record.wakeTime,
+          quality: record.quality,
+          notes: record.notes,
+          medications: record.medications
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      const newRecord: SleepRecord = {
+        ...record,
+        id: data.id,
+        personalities: [],
+      };
+      
+      setSleepRecords(prev => [newRecord, ...prev]);
+      toast.success("睡眠記錄已添加");
+      return data.id;
+    } catch (error) {
+      console.error('Error adding sleep record:', error);
+      toast.error('添加睡眠記錄失敗');
+      return undefined;
+    }
   };
 
-  const updateSleepRecord = (id: string, record: Partial<SleepRecord>) => {
-    setSleepRecords(prev => 
-      prev.map(r => r.id === id ? { ...r, ...record, edited: true } : r)
-    );
-    toast.success("睡眠記錄已更新");
+  const updateSleepRecord = async (id: string, record: Partial<SleepRecord>) => {
+    try {
+      const { error } = await supabase
+        .from('sleep_records')
+        .update({
+          date: record.date,
+          sleep_time: record.sleepTime,
+          wake_time: record.wakeTime,
+          quality: record.quality,
+          notes: record.notes,
+          medications: record.medications,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      setSleepRecords(prev => 
+        prev.map(r => r.id === id ? { ...r, ...record, edited: true } : r)
+      );
+      toast.success("睡眠記錄已更新");
+    } catch (error) {
+      console.error('Error updating sleep record:', error);
+      toast.error('更新睡眠記錄失敗');
+    }
   };
 
-  const deleteSleepRecord = (id: string) => {
-    setSleepRecords(prev => prev.filter(r => r.id !== id));
-    toast.success("睡眠記錄已刪除");
+  const deleteSleepRecord = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('sleep_records')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      setSleepRecords(prev => prev.filter(r => r.id !== id));
+      toast.success("睡眠記錄已刪除");
+    } catch (error) {
+      console.error('Error deleting sleep record:', error);
+      toast.error('刪除睡眠記錄失敗');
+    }
   };
 
   // Personality record functions
-  const addPersonalityRecord = (record: Omit<PersonalityRecord, "id">) => {
-    const newRecord: PersonalityRecord = {
-      ...record,
-      id: Math.random().toString(36).substring(2, 9),
-    };
-    
-    setSleepRecords(prev => 
-      prev.map(r => {
-        if (r.id === record.sleepRecordId) {
-          return { 
-            ...r, 
-            personalities: [...(r.personalities || []), newRecord],
-          };
-        }
-        return r;
-      })
-    );
-    toast.success("人格記錄已添加");
+  const addPersonalityRecord = async (record: Omit<PersonalityRecord, "id">) => {
+    try {
+      const { data, error } = await supabase
+        .from('personality_records')
+        .insert({
+          sleep_record_id: record.sleepRecordId,
+          personality: record.personality,
+          start_time: record.startTime,
+          end_time: record.endTime,
+          notes: record.notes
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      const newRecord: PersonalityRecord = {
+        ...record,
+        id: data.id,
+      };
+      
+      setSleepRecords(prev => 
+        prev.map(r => {
+          if (r.id === record.sleepRecordId) {
+            return { 
+              ...r, 
+              personalities: [...(r.personalities || []), newRecord],
+            };
+          }
+          return r;
+        })
+      );
+      toast.success("人格記錄已添加");
+      return data.id;
+    } catch (error) {
+      console.error('Error adding personality record:', error);
+      toast.error('添加人格記錄失敗');
+      return undefined;
+    }
   };
 
-  const updatePersonalityRecord = (id: string, record: Partial<PersonalityRecord>) => {
-    setSleepRecords(prev => 
-      prev.map(r => {
-        if (r.personalities?.some(p => p.id === id)) {
-          return {
-            ...r,
-            personalities: r.personalities.map(p => 
-              p.id === id ? { ...p, ...record } : p
-            ),
-            edited: true
-          };
-        }
-        return r;
-      })
-    );
-    toast.success("人格記錄已更新");
+  const updatePersonalityRecord = async (id: string, record: Partial<PersonalityRecord>) => {
+    try {
+      const { error } = await supabase
+        .from('personality_records')
+        .update({
+          personality: record.personality,
+          start_time: record.startTime,
+          end_time: record.endTime,
+          notes: record.notes
+        })
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      setSleepRecords(prev => 
+        prev.map(r => {
+          if (r.personalities?.some(p => p.id === id)) {
+            return {
+              ...r,
+              personalities: r.personalities.map(p => 
+                p.id === id ? { ...p, ...record } : p
+              ),
+              edited: true
+            };
+          }
+          return r;
+        })
+      );
+      toast.success("人格記錄已更新");
+    } catch (error) {
+      console.error('Error updating personality record:', error);
+      toast.error('更新人格記錄失敗');
+    }
   };
 
-  const deletePersonalityRecord = (id: string) => {
-    setSleepRecords(prev => 
-      prev.map(r => {
-        if (r.personalities?.some(p => p.id === id)) {
-          return {
-            ...r,
-            personalities: r.personalities.filter(p => p.id !== id),
-            edited: true
-          };
-        }
-        return r;
-      })
-    );
-    toast.success("人格記錄已刪除");
+  const deletePersonalityRecord = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('personality_records')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      setSleepRecords(prev => 
+        prev.map(r => {
+          if (r.personalities?.some(p => p.id === id)) {
+            return {
+              ...r,
+              personalities: r.personalities.filter(p => p.id !== id),
+              edited: true
+            };
+          }
+          return r;
+        })
+      );
+      toast.success("人格記錄已刪除");
+    } catch (error) {
+      console.error('Error deleting personality record:', error);
+      toast.error('刪除人格記錄失敗');
+    }
   };
 
-  // Doctor visit functions
+  // Doctor visit functions (still using localStorage for now)
   const addDoctorVisit = (visit: Omit<DoctorVisit, "id">) => {
     const newVisit: DoctorVisit = {
       ...visit,

@@ -15,15 +15,7 @@ export const formatDate = (dateString: string, formatStr: string = "yyyy/MM/dd")
 // Calculate sleep duration from sleep and wake times
 export const calculateSleepDuration = (sleepTime: string, wakeTime: string, date: string) => {
   try {
-    const sleepDate = new Date(`${date}T${sleepTime}:00`);
-    let wakeDate = new Date(`${date}T${wakeTime}:00`);
-    
-    // If wake time is before sleep time, assume it's the next day
-    if (wakeDate < sleepDate) {
-      wakeDate = new Date(wakeDate.setDate(wakeDate.getDate() + 1));
-    }
-    
-    const durationMinutes = differenceInMinutes(wakeDate, sleepDate);
+    const durationMinutes = calculateSleepDurationMinutes(sleepTime, wakeTime, date);
     const hours = Math.floor(durationMinutes / 60);
     const minutes = durationMinutes % 60;
     
@@ -86,6 +78,20 @@ export const getSleepRecordsInRange = (
   });
 };
 
+// Calculate total sleep duration for a specific date (across all segments)
+export const calculateTotalSleepDurationForDate = (
+  sleepRecords: SleepRecord[],
+  date: string
+): number => {
+  const recordsForDate = sleepRecords.filter(record => record.date === date);
+  
+  if (recordsForDate.length === 0) return 0;
+  
+  return recordsForDate.reduce((total, record) => {
+    return total + calculateSleepDurationMinutes(record.sleepTime, record.wakeTime, record.date);
+  }, 0);
+};
+
 // Get sleep records since the last doctor visit
 export const getSleepRecordsSinceLastVisit = (
   sleepRecords: SleepRecord[],
@@ -138,7 +144,7 @@ export const getLastNDaysRange = (days: number) => {
   return { startDate, endDate };
 };
 
-// Format time for display (HH:MM)
+// Format time for display (HH:MM) - 24-hour format
 export const formatTime = (time: string) => {
   return time;
 };

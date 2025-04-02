@@ -29,6 +29,7 @@ const SleepRecordForm = ({ open, onOpenChange, editRecord }: SleepRecordFormProp
   const [quality, setQuality] = useState(7);
   const [notes, setNotes] = useState("");
   const [medications, setMedications] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (editRecord) {
@@ -38,8 +39,10 @@ const SleepRecordForm = ({ open, onOpenChange, editRecord }: SleepRecordFormProp
       setQuality(editRecord.quality);
       setNotes(editRecord.notes);
       setMedications(editRecord.medications || "");
+    } else {
+      resetForm();
     }
-  }, [editRecord]);
+  }, [editRecord, open]);
 
   const resetForm = () => {
     setDate(new Date().toISOString().split("T")[0]);
@@ -50,8 +53,9 @@ const SleepRecordForm = ({ open, onOpenChange, editRecord }: SleepRecordFormProp
     setMedications("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     const sleepRecord = {
       date,
@@ -62,15 +66,21 @@ const SleepRecordForm = ({ open, onOpenChange, editRecord }: SleepRecordFormProp
       medications,
     };
     
-    if (editRecord) {
-      updateSleepRecord(editRecord.id, sleepRecord);
-    } else {
-      addSleepRecord(sleepRecord);
-    }
-    
-    onOpenChange(false);
-    if (!editRecord) {
-      resetForm();
+    try {
+      if (editRecord) {
+        await updateSleepRecord(editRecord.id, sleepRecord);
+      } else {
+        await addSleepRecord(sleepRecord);
+      }
+      
+      onOpenChange(false);
+      if (!editRecord) {
+        resetForm();
+      }
+    } catch (error) {
+      console.error("Error saving sleep record:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -81,7 +91,11 @@ const SleepRecordForm = ({ open, onOpenChange, editRecord }: SleepRecordFormProp
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isSubmitting) {
+        onOpenChange(isOpen);
+      }
+    }}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
@@ -107,7 +121,7 @@ const SleepRecordForm = ({ open, onOpenChange, editRecord }: SleepRecordFormProp
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="sleepTime">入睡時間</Label>
+                <Label htmlFor="sleepTime">入睡時間 (24小時制)</Label>
                 <Input
                   id="sleepTime"
                   type="time"
@@ -118,7 +132,7 @@ const SleepRecordForm = ({ open, onOpenChange, editRecord }: SleepRecordFormProp
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="wakeTime">醒來時間</Label>
+                <Label htmlFor="wakeTime">醒來時間 (24小時制)</Label>
                 <Input
                   id="wakeTime"
                   type="time"
@@ -170,8 +184,12 @@ const SleepRecordForm = ({ open, onOpenChange, editRecord }: SleepRecordFormProp
           </div>
 
           <DialogFooter>
-            <Button type="submit" className="bg-sleep hover:bg-sleep-dark">
-              {editRecord ? "更新" : "儲存"}
+            <Button 
+              type="submit" 
+              className="bg-sleep hover:bg-sleep-dark"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "處理中..." : (editRecord ? "更新" : "儲存")}
             </Button>
           </DialogFooter>
         </form>

@@ -11,7 +11,7 @@ import { SleepRecord } from "../contexts/DataContext";
 import { getSleepRecordsInRange } from "../utils/dateUtils";
 
 const AnalysisPage = () => {
-  const { sleepRecords } = useData();
+  const { sleepRecords, loading } = useData();
   
   // Default to last 30 days
   const [startDate, setStartDate] = useState<Date>(() => subDays(new Date(), 29));
@@ -40,27 +40,35 @@ const AnalysisPage = () => {
         />
       </div>
 
-      <SleepStatsSummary
-        sleepRecords={filteredRecords}
-        startDate={startDate}
-        endDate={endDate}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SleepDurationChart sleepRecords={filteredRecords} />
-        <SleepQualityChart sleepRecords={filteredRecords} />
-      </div>
-
-      <div className="grid grid-cols-1 gap-6">
-        <PersonalityDistributionChart sleepRecords={filteredRecords} />
-      </div>
-
-      {filteredRecords.length === 0 && (
-        <div className="text-center p-8 bg-muted/20 rounded-lg">
-          <p className="text-muted-foreground">
-            所選時間範圍內沒有找到睡眠記錄
-          </p>
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <p className="text-muted-foreground">載入中...</p>
         </div>
+      ) : (
+        <>
+          <SleepStatsSummary
+            sleepRecords={filteredRecords}
+            startDate={startDate}
+            endDate={endDate}
+          />
+
+          <div className="grid grid-cols-1 gap-6">
+            <SleepDurationChart sleepRecords={filteredRecords} />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SleepQualityChart sleepRecords={filteredRecords} />
+            <PersonalityDistributionChart sleepRecords={filteredRecords} />
+          </div>
+
+          {filteredRecords.length === 0 && (
+            <div className="text-center p-8 bg-muted/20 rounded-lg">
+              <p className="text-muted-foreground">
+                所選時間範圍內沒有找到睡眠記錄
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

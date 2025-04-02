@@ -9,7 +9,83 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      personality_records: {
+        Row: {
+          created_at: string | null
+          end_time: string
+          id: string
+          notes: string | null
+          personality: string
+          sleep_record_id: string | null
+          start_time: string
+        }
+        Insert: {
+          created_at?: string | null
+          end_time: string
+          id?: string
+          notes?: string | null
+          personality: string
+          sleep_record_id?: string | null
+          start_time: string
+        }
+        Update: {
+          created_at?: string | null
+          end_time?: string
+          id?: string
+          notes?: string | null
+          personality?: string
+          sleep_record_id?: string | null
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personality_records_sleep_record_id_fkey"
+            columns: ["sleep_record_id"]
+            isOneToOne: false
+            referencedRelation: "sleep_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sleep_records: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: string
+          medications: string | null
+          notes: string | null
+          quality: number
+          sleep_time: string
+          updated_at: string | null
+          user_id: string | null
+          wake_time: string
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          id?: string
+          medications?: string | null
+          notes?: string | null
+          quality: number
+          sleep_time: string
+          updated_at?: string | null
+          user_id?: string | null
+          wake_time: string
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          medications?: string | null
+          notes?: string | null
+          quality?: number
+          sleep_time?: string
+          updated_at?: string | null
+          user_id?: string | null
+          wake_time?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

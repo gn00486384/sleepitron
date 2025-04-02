@@ -42,6 +42,7 @@ const PersonalityForm = ({
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [notes, setNotes] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (editRecord) {
@@ -66,8 +67,9 @@ const PersonalityForm = ({
     setNotes("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     const recordData = {
       sleepRecordId,
@@ -77,17 +79,27 @@ const PersonalityForm = ({
       notes,
     };
 
-    if (editRecord) {
-      updatePersonalityRecord(editRecord.id, recordData);
-    } else {
-      addPersonalityRecord(recordData);
+    try {
+      if (editRecord) {
+        await updatePersonalityRecord(editRecord.id, recordData);
+      } else {
+        await addPersonalityRecord(recordData);
+      }
+      
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error saving personality record:", error);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isSubmitting) {
+        onOpenChange(isOpen);
+      }
+    }}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
@@ -122,7 +134,7 @@ const PersonalityForm = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="startTime">開始時間</Label>
+              <Label htmlFor="startTime">開始時間 (24小時制)</Label>
               <Input
                 id="startTime"
                 type="time"
@@ -133,7 +145,7 @@ const PersonalityForm = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="endTime">結束時間</Label>
+              <Label htmlFor="endTime">結束時間 (24小時制)</Label>
               <Input
                 id="endTime"
                 type="time"
@@ -156,8 +168,12 @@ const PersonalityForm = ({
           </div>
 
           <DialogFooter>
-            <Button type="submit" className="bg-sleep hover:bg-sleep-dark">
-              {editRecord ? "更新" : "儲存"}
+            <Button 
+              type="submit" 
+              className="bg-sleep hover:bg-sleep-dark"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "處理中..." : (editRecord ? "更新" : "儲存")}
             </Button>
           </DialogFooter>
         </form>
