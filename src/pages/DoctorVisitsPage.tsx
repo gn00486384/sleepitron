@@ -3,22 +3,17 @@ import { useState } from "react";
 import { useData } from "../contexts/DataContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusCircle, Search } from "lucide-react";
+import { PlusCircle, Search, Loader2 } from "lucide-react";
 import DoctorVisitForm from "../components/doctor/DoctorVisitForm";
 import DoctorVisitCard from "../components/doctor/DoctorVisitCard";
 
 const DoctorVisitsPage = () => {
-  const { doctorVisits } = useData();
+  const { doctorVisits, loading } = useData();
   const [modalOpen, setModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Sort visits by date (newest first)
-  const sortedVisits = [...doctorVisits].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
-
   // Filter visits by search query
-  const filteredVisits = sortedVisits.filter(
+  const filteredVisits = doctorVisits.filter(
     (visit) =>
       visit.date.includes(searchQuery) ||
       visit.notes.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -49,7 +44,12 @@ const DoctorVisitsPage = () => {
         </div>
       </div>
 
-      {filteredVisits.length > 0 ? (
+      {loading ? (
+        <div className="flex flex-col items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-sleep" />
+          <p className="mt-4 text-muted-foreground">載入醫生訪問記錄中...</p>
+        </div>
+      ) : filteredVisits.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredVisits.map((visit) => (
             <DoctorVisitCard key={visit.id} visit={visit} />

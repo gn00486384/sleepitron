@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { toast } from "sonner";
 import { useAuth } from "./AuthContext";
@@ -44,25 +45,14 @@ interface DataContextType {
   addPersonalityRecord: (record: Omit<PersonalityRecord, "id">) => Promise<string | undefined>;
   updatePersonalityRecord: (id: string, record: Partial<PersonalityRecord>) => Promise<void>;
   deletePersonalityRecord: (id: string) => Promise<void>;
-  addDoctorVisit: (visit: Omit<DoctorVisit, "id">) => void;
-  updateDoctorVisit: (id: string, visit: Partial<DoctorVisit>) => void;
-  deleteDoctorVisit: (id: string) => void;
+  addDoctorVisit: (visit: Omit<DoctorVisit, "id">) => Promise<void>;
+  updateDoctorVisit: (id: string, visit: Partial<DoctorVisit>) => Promise<void>;
+  deleteDoctorVisit: (id: string) => Promise<void>;
   loading: boolean;
 }
 
 // Create the context
 export const DataContext = createContext<DataContextType | undefined>(undefined);
-
-// Mock initial data for doctor visits
-const MOCK_DOCTOR_VISITS: DoctorVisit[] = [
-  {
-    id: "1",
-    date: "2023-09-01",
-    notes: "患者報告睡眠不佳，有焦慮症狀",
-    prescriptions: "安眠藥 5mg，每晚睡前服用",
-    followUpDate: "2023-10-01",
-  }
-];
 
 // Create the data provider
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -74,12 +64,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Load data when mounted
   useEffect(() => {
     fetchSleepRecords();
-    
-    // For now, we'll keep doctor visits in localStorage
-    const storedDoctorVisits = localStorage.getItem("sleepitron_doctor_visits");
-    setDoctorVisits(storedDoctorVisits ? JSON.parse(storedDoctorVisits) : MOCK_DOCTOR_VISITS);
-    
-    // Later, we can add a similar function for doctor visits using Supabase
+    fetchDoctorVisits();
   }, []);
 
   // Fetch sleep records from Supabase
@@ -129,19 +114,39 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setSleepRecords(sleepRecordsWithPersonalities);
     } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('資料載入失敗');
+      console.error('Error fetching sleep records:', error);
+      toast.error('睡眠記錄載入失敗');
     } finally {
       setLoading(false);
     }
   };
 
-  // Save doctor visits to localStorage whenever it changes
-  useEffect(() => {
-    if (doctorVisits.length > 0) {
-      localStorage.setItem("sleepitron_doctor_visits", JSON.stringify(doctorVisits));
+  // Fetch doctor visits from Supabase
+  const fetchDoctorVisits = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('doctor_visits')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      const formattedVisits: DoctorVisit[] = data.map(visit => ({
+        id: visit.id,
+        date: visit.date,
+        notes: visit.notes,
+        prescriptions: visit.prescriptions,
+        followUpDate: visit.follow_up_date,
+      }));
+
+      setDoctorVisits(formattedVisits);
+    } catch (error) {
+      console.error('Error fetching doctor visits:', error);
+      toast.error('醫生訪問記錄載入失敗');
     }
-  }, [doctorVisits]);
+  };
 
   // Sleep record functions
   const addSleepRecord = async (record: Omit<SleepRecord, "id">) => {
@@ -338,26 +343,81 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Doctor visit functions (still using localStorage for now)
-  const addDoctorVisit = (visit: Omit<DoctorVisit, "id">) => {
-    const newVisit: DoctorVisit = {
-      ...visit,
-      id: Math.random().toString(36).substring(2, 9),
-    };
-    setDoctorVisits(prev => [...prev, newVisit]);
-    toast.success("醫生訪問記錄已添加");
+  // Doctor visit functions with Supabase integration
+  const addDoctorVisit = async (visit: Omit<DoctorVisit, "id">) => {
+    try {
+      const { data, error } = await supabase
+        .from('doctor_visits')
+        .insert({
+          date: visit.date,
+          notes: visit.notes,
+          prescriptions: visit.prescriptions,
+          follow_up_date: visit.followUpDate
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      const newVisit: DoctorVisit = {
+        ...visit,
+        id: data?.id || '',
+      };
+      
+      setDoctorVisits(prev => [newVisit, ...prev]);
+      toast.success("醫生訪問記錄已添加");
+    } catch (error) {
+      console.error('Error adding doctor visit:', error);
+      toast.error('添加醫生訪問記錄失敗');
+    }
   };
 
-  const updateDoctorVisit = (id: string, visit: Partial<DoctorVisit>) => {
-    setDoctorVisits(prev => 
-      prev.map(v => v.id === id ? { ...v, ...visit } : v)
-    );
-    toast.success("醫生訪問記錄已更新");
+  const updateDoctorVisit = async (id: string, visit: Partial<DoctorVisit>) => {
+    try {
+      const { error } = await supabase
+        .from('doctor_visits')
+        .update({
+          date: visit.date,
+          notes: visit.notes,
+          prescriptions: visit.prescriptions,
+          follow_up_date: visit.followUpDate,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      setDoctorVisits(prev => 
+        prev.map(v => v.id === id ? { ...v, ...visit } : v)
+      );
+      toast.success("醫生訪問記錄已更新");
+    } catch (error) {
+      console.error('Error updating doctor visit:', error);
+      toast.error('更新醫生訪問記錄失敗');
+    }
   };
 
-  const deleteDoctorVisit = (id: string) => {
-    setDoctorVisits(prev => prev.filter(v => v.id !== id));
-    toast.success("醫生訪問記錄已刪除");
+  const deleteDoctorVisit = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('doctor_visits')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      setDoctorVisits(prev => prev.filter(v => v.id !== id));
+      toast.success("醫生訪問記錄已刪除");
+    } catch (error) {
+      console.error('Error deleting doctor visit:', error);
+      toast.error('刪除醫生訪問記錄失敗');
+    }
   };
 
   const value = {

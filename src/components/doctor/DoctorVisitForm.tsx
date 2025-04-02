@@ -30,6 +30,7 @@ const DoctorVisitForm = ({
   const [notes, setNotes] = useState("");
   const [prescriptions, setPrescriptions] = useState("");
   const [followUpDate, setFollowUpDate] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (editVisit) {
@@ -49,8 +50,9 @@ const DoctorVisitForm = ({
     setFollowUpDate("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     const visitData = {
       date,
@@ -59,15 +61,21 @@ const DoctorVisitForm = ({
       followUpDate: followUpDate || undefined,
     };
 
-    if (editVisit) {
-      updateDoctorVisit(editVisit.id, visitData);
-    } else {
-      addDoctorVisit(visitData);
-    }
+    try {
+      if (editVisit) {
+        await updateDoctorVisit(editVisit.id, visitData);
+      } else {
+        await addDoctorVisit(visitData);
+      }
 
-    onOpenChange(false);
-    if (!editVisit) {
-      resetForm();
+      onOpenChange(false);
+      if (!editVisit) {
+        resetForm();
+      }
+    } catch (error) {
+      console.error("Error saving doctor visit:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -132,8 +140,12 @@ const DoctorVisitForm = ({
           </div>
 
           <DialogFooter>
-            <Button type="submit" className="bg-sleep hover:bg-sleep-dark">
-              {editVisit ? "更新" : "保存"}
+            <Button 
+              type="submit" 
+              className="bg-sleep hover:bg-sleep-dark" 
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "處理中..." : (editVisit ? "更新" : "保存")}
             </Button>
           </DialogFooter>
         </form>

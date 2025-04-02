@@ -22,6 +22,7 @@ import {
   Trash2,
   Pill,
   CalendarClock,
+  Loader2,
 } from "lucide-react";
 import { useData, DoctorVisit } from "../../contexts/DataContext";
 import DoctorVisitForm from "./DoctorVisitForm";
@@ -45,6 +46,18 @@ interface DoctorVisitCardProps {
 const DoctorVisitCard = ({ visit }: DoctorVisitCardProps) => {
   const { deleteDoctorVisit } = useData();
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteDoctorVisit(visit.id);
+    } catch (error) {
+      console.error("Error deleting doctor visit:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <>
@@ -95,10 +108,18 @@ const DoctorVisitCard = ({ visit }: DoctorVisitCardProps) => {
                       <AlertDialogFooter>
                         <AlertDialogCancel>取消</AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={() => deleteDoctorVisit(visit.id)}
+                          onClick={handleDelete}
                           className="bg-destructive hover:bg-destructive/90"
+                          disabled={isDeleting}
                         >
-                          刪除
+                          {isDeleting ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                              處理中...
+                            </>
+                          ) : (
+                            "刪除"
+                          )}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
