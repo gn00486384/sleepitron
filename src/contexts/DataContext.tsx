@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 import { toast } from "sonner";
 import { useAuth } from "./AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 
 // Types
 export interface SleepRecord {
@@ -87,8 +88,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data: sleepData, error: sleepError } = await supabase
         .from('sleep_records')
-        .select('*')
-        .order('date', { ascending: false });
+        .select('*');
 
       if (sleepError) {
         throw sleepError;
@@ -109,7 +109,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .map(p => ({
             id: p.id,
             sleepRecordId: p.sleep_record_id,
-            personality: p.personality,
+            personality: p.personality as "宇辰" | "空" | "貓咪" | "欣怡",
             startTime: p.start_time,
             endTime: p.end_time,
             notes: p.notes || ''
@@ -165,13 +165,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const newRecord: SleepRecord = {
         ...record,
-        id: data.id,
+        id: data?.id || '',
         personalities: [],
       };
       
       setSleepRecords(prev => [newRecord, ...prev]);
       toast.success("睡眠記錄已添加");
-      return data.id;
+      return data?.id;
     } catch (error) {
       console.error('Error adding sleep record:', error);
       toast.error('添加睡眠記錄失敗');
@@ -248,7 +248,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const newRecord: PersonalityRecord = {
         ...record,
-        id: data.id,
+        id: data?.id || '',
       };
       
       setSleepRecords(prev => 
@@ -263,7 +263,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         })
       );
       toast.success("人格記錄已添加");
-      return data.id;
+      return data?.id;
     } catch (error) {
       console.error('Error adding personality record:', error);
       toast.error('添加人格記錄失敗');
