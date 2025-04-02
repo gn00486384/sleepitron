@@ -1,3 +1,4 @@
+
 import { format, parseISO, differenceInMinutes, addDays, subDays, isWithinInterval } from "date-fns";
 import { SleepRecord, DoctorVisit } from "../contexts/DataContext";
 
@@ -28,15 +29,23 @@ export const calculateSleepDuration = (sleepTime: string, wakeTime: string, date
 // Calculate sleep duration in minutes
 export const calculateSleepDurationMinutes = (sleepTime: string, wakeTime: string, date: string): number => {
   try {
-    const sleepDate = new Date(`${date}T${sleepTime}:00`);
-    let wakeDate = new Date(`${date}T${wakeTime}:00`);
+    if (!sleepTime || !wakeTime || !date) {
+      console.error("Missing parameters for sleep duration calculation:", { sleepTime, wakeTime, date });
+      return 0;
+    }
+    
+    // Create date objects for sleep and wake times
+    const sleepDate = new Date(`${date}T${sleepTime}`);
+    let wakeDate = new Date(`${date}T${wakeTime}`);
     
     // If wake time is before sleep time, assume it's the next day
     if (wakeDate < sleepDate) {
-      wakeDate = new Date(wakeDate.setDate(wakeDate.getDate() + 1));
+      wakeDate = addDays(wakeDate, 1);
     }
     
-    return differenceInMinutes(wakeDate, sleepDate);
+    // Calculate the difference in minutes
+    const minutes = differenceInMinutes(wakeDate, sleepDate);
+    return minutes > 0 ? minutes : 0;
   } catch (e) {
     console.error("Error calculating sleep duration minutes:", e);
     return 0;
@@ -146,6 +155,10 @@ export const getLastNDaysRange = (days: number) => {
 // Format time for display (HH:MM) - non-24-hour format
 export const formatTime = (time: string) => {
   try {
+    if (!time || !time.includes(':')) {
+      return time;
+    }
+    
     const [hours, minutes] = time.split(':').map(Number);
     const period = hours >= 12 ? '下午' : '上午';
     const displayHours = hours % 12 || 12;
