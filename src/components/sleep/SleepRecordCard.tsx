@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Card,
@@ -42,7 +41,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { formatDate, calculateSleepDuration } from "../../utils/dateUtils";
+import { formatDate, calculateSleepDuration, formatTime } from "../../utils/dateUtils";
 
 interface SleepRecordCardProps {
   record: SleepRecord;
@@ -89,7 +88,7 @@ const SleepRecordCard = ({ record }: SleepRecordCardProps) => {
                 <div className="flex items-center text-sm">
                   <Clock className="h-3.5 w-3.5 mr-1" />
                   <span>
-                    {record.sleepTime} - {record.wakeTime}（
+                    {formatTime(record.sleepTime)} - {formatTime(record.wakeTime)}（
                     {calculateSleepDuration(
                       record.sleepTime,
                       record.wakeTime,

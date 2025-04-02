@@ -1,4 +1,3 @@
-
 import { format, parseISO, differenceInMinutes, addDays, subDays, isWithinInterval } from "date-fns";
 import { SleepRecord, DoctorVisit } from "../contexts/DataContext";
 
@@ -144,9 +143,17 @@ export const getLastNDaysRange = (days: number) => {
   return { startDate, endDate };
 };
 
-// Format time for display (HH:MM) - 24-hour format
+// Format time for display (HH:MM) - non-24-hour format
 export const formatTime = (time: string) => {
-  return time;
+  try {
+    const [hours, minutes] = time.split(':').map(Number);
+    const period = hours >= 12 ? '下午' : '上午';
+    const displayHours = hours % 12 || 12;
+    return `${period} ${displayHours}:${minutes.toString().padStart(2, '0')}`;
+  } catch (e) {
+    console.error("Error formatting time:", e);
+    return time;
+  }
 };
 
 // Parse time strings to Date objects

@@ -13,7 +13,7 @@ import {
 import { SleepRecord } from "../../contexts/DataContext";
 import { format, parseISO } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { calculateSleepDurationMinutes } from "../../utils/dateUtils";
+import { calculateSleepDurationMinutes, formatTime } from "../../utils/dateUtils";
 
 interface SleepDurationChartProps {
   sleepRecords: SleepRecord[];
@@ -55,8 +55,8 @@ const SleepDurationChart = ({ sleepRecords }: SleepDurationChartProps) => {
       return {
         id: record.id,
         duration: parseFloat((durationMinutes / 60).toFixed(1)),
-        sleepTime: record.sleepTime,
-        wakeTime: record.wakeTime,
+        sleepTime: formatTime(record.sleepTime),
+        wakeTime: formatTime(record.wakeTime),
         label: `${hours}小時${minutes > 0 ? ` ${minutes}分鐘` : ''}`,
         color: colors[index % colors.length],
       };
