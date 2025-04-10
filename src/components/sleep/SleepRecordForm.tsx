@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useData, SleepRecord } from "../../contexts/DataContext";
 import {
@@ -11,22 +10,28 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
 
 interface SleepRecordFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editRecord?: SleepRecord;
+  initialDate?: string;
 }
 
-const SleepRecordForm = ({ open, onOpenChange, editRecord }: SleepRecordFormProps) => {
+const SleepRecordForm = ({
+  open,
+  onOpenChange,
+  editRecord,
+  initialDate,
+}: SleepRecordFormProps) => {
   const { addSleepRecord, updateSleepRecord } = useData();
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [sleepTime, setSleepTime] = useState("22:00");
-  const [wakeTime, setWakeTime] = useState("07:00");
-  const [quality, setQuality] = useState(7);
+  const [date, setDate] = useState("");
+  const [sleepTime, setSleepTime] = useState("");
+  const [wakeTime, setWakeTime] = useState("");
+  const [quality, setQuality] = useState(5);
   const [notes, setNotes] = useState("");
   const [medications, setMedications] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,16 +44,28 @@ const SleepRecordForm = ({ open, onOpenChange, editRecord }: SleepRecordFormProp
       setQuality(editRecord.quality);
       setNotes(editRecord.notes);
       setMedications(editRecord.medications || "");
+    } else if (initialDate) {
+      setDate(initialDate);
+      resetTimeFields();
     } else {
       resetForm();
     }
-  }, [editRecord, open]);
+  }, [editRecord, open, initialDate]);
+
+  const resetTimeFields = () => {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, "0");
+    const minutes = now.getMinutes().toString().padStart(2, "0");
+    const currentTime = `${hours}:${minutes}`;
+
+    setSleepTime(currentTime);
+    setWakeTime(currentTime);
+  };
 
   const resetForm = () => {
-    setDate(new Date().toISOString().split("T")[0]);
-    setSleepTime("22:00");
-    setWakeTime("07:00");
-    setQuality(7);
+    setDate("");
+    resetTimeFields();
+    setQuality(5);
     setNotes("");
     setMedications("");
   };
@@ -56,8 +73,8 @@ const SleepRecordForm = ({ open, onOpenChange, editRecord }: SleepRecordFormProp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    const sleepRecord = {
+
+    const recordData = {
       date,
       sleepTime,
       wakeTime,
@@ -65,29 +82,20 @@ const SleepRecordForm = ({ open, onOpenChange, editRecord }: SleepRecordFormProp
       notes,
       medications,
     };
-    
+
     try {
       if (editRecord) {
-        await updateSleepRecord(editRecord.id, sleepRecord);
+        await updateSleepRecord(editRecord.id, recordData);
       } else {
-        await addSleepRecord(sleepRecord);
+        await addSleepRecord(recordData);
       }
       
       onOpenChange(false);
-      if (!editRecord) {
-        resetForm();
-      }
     } catch (error) {
       console.error("Error saving sleep record:", error);
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const qualityLabels = ["很差", "差", "一般", "好", "很好"];
-  const getQualityLabel = () => {
-    const index = Math.min(Math.floor(quality / 2), 4);
-    return qualityLabels[index];
   };
 
   return (
@@ -96,91 +104,85 @@ const SleepRecordForm = ({ open, onOpenChange, editRecord }: SleepRecordFormProp
         onOpenChange(isOpen);
       }
     }}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>
-            {editRecord ? "編輯睡眠記錄" : "添加睡眠記錄"}
-          </DialogTitle>
+          <DialogTitle>{editRecord ? "編輯睡眠記錄" : "添加睡眠記錄"}</DialogTitle>
           <DialogDescription>
-            請填寫您的睡眠記錄詳情
+            請填寫您的睡眠記錄
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-          <div className="grid grid-cols-1 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          <div className="space-y-2">
+            <Label htmlFor="date">日期</Label>
+            <Input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="date">日期</Label>
+              <Label htmlFor="sleepTime">入睡時間 (24小時制)</Label>
               <Input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+                id="sleepTime"
+                type="time"
+                value={sleepTime}
+                onChange={(e) => setSleepTime(e.target.value)}
                 required
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="sleepTime">入睡時間 (24小時制)</Label>
-                <Input
-                  id="sleepTime"
-                  type="time"
-                  value={sleepTime}
-                  onChange={(e) => setSleepTime(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="wakeTime">醒來時間 (24小時制)</Label>
-                <Input
-                  id="wakeTime"
-                  type="time"
-                  value={wakeTime}
-                  onChange={(e) => setWakeTime(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <Label htmlFor="quality">睡眠質量</Label>
-                <span className="text-sm font-medium">
-                  {quality}/10 ({getQualityLabel()})
-                </span>
-              </div>
-              <Slider
-                id="quality"
-                min={1}
-                max={10}
-                step={1}
-                value={[quality]}
-                onValueChange={(value) => setQuality(value[0])}
-                className="py-2"
-              />
-            </div>
-            
             <div className="space-y-2">
-              <Label htmlFor="medications">用藥信息</Label>
+              <Label htmlFor="wakeTime">起床時間 (24小時制)</Label>
               <Input
-                id="medications"
-                value={medications}
-                onChange={(e) => setMedications(e.target.value)}
-                placeholder="服用的藥物和劑量"
+                id="wakeTime"
+                type="time"
+                value={wakeTime}
+                onChange={(e) => setWakeTime(e.target.value)}
+                required
               />
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notes">備註</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="任何其他相關信息..."
-                className="min-h-[80px]"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="quality">睡眠質量 (1-10)</Label>
+            <Slider
+              id="quality"
+              defaultValue={[quality]}
+              max={10}
+              min={1}
+              step={1}
+              onValueChange={(value) => setQuality(value[0])}
+            />
+            <p className="text-sm text-muted-foreground">
+              您選擇的睡眠質量: {quality}/10
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="medications">服用藥物</Label>
+            <Input
+              id="medications"
+              type="text"
+              value={medications}
+              onChange={(e) => setMedications(e.target.value)}
+              placeholder="若有，請填寫藥物名稱"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">備註</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="關於睡眠的備註..."
+              className="min-h-[80px]"
+            />
           </div>
 
           <DialogFooter>
