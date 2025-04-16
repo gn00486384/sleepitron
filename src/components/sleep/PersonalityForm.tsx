@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { useData } from "../../contexts/DataContext";
+import { useData, PersonalityRecord } from "../../contexts/DataContext";
 import {
   Dialog,
   DialogContent,
