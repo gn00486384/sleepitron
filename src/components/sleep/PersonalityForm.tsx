@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { useData, PersonalityRecord } from "../../contexts/DataContext";
+import { useData } from "../../contexts/DataContext";
 import {
   Dialog,
   DialogContent,
@@ -29,7 +28,7 @@ interface PersonalityFormProps {
   editRecord?: PersonalityRecord;
 }
 
-const personalities = ["宇辰", "空", "貓咪", "欣怡"] as const;
+const personalities = ["宇辰", "空", "貓咪", "昕儀"] as const;
 
 const PersonalityForm = ({
   open,
@@ -38,7 +37,7 @@ const PersonalityForm = ({
   editRecord,
 }: PersonalityFormProps) => {
   const { addPersonalityRecord, updatePersonalityRecord } = useData();
-  const [personality, setPersonality] = useState<"宇辰" | "空" | "貓咪" | "欣怡">("宇辰");
+  const [personality, setPersonality] = useState<"宇辰" | "空" | "貓咪" | "昕儀">("宇辰");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [notes, setNotes] = useState("");
@@ -115,7 +114,7 @@ const PersonalityForm = ({
             <Label htmlFor="personality">人格</Label>
             <Select
               value={personality}
-              onValueChange={(value: "宇辰" | "空" | "貓咪" | "欣怡") => setPersonality(value)}
+              onValueChange={(value: "宇辰" | "空" | "貓咪" | "昕儀") => setPersonality(value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="選擇人格" />

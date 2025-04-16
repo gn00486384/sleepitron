@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { toast } from "sonner";
 import { useAuth } from "./AuthContext";
@@ -21,7 +20,7 @@ export interface SleepRecord {
 export interface PersonalityRecord {
   id: string;
   sleepRecordId: string;
-  personality: "宇辰" | "空" | "貓咪" | "欣怡";
+  personality: "宇辰" | "空" | "貓咪" | "昕儀";
   startTime: string;
   endTime: string;
   notes: string;
@@ -94,7 +93,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .map(p => ({
             id: p.id,
             sleepRecordId: p.sleep_record_id,
-            personality: p.personality as "宇辰" | "空" | "貓咪" | "欣怡",
+            personality: p.personality === "欣怡" ? "昕儀" : p.personality as "宇辰" | "空" | "貓咪" | "昕儀",
             startTime: p.start_time,
             endTime: p.end_time,
             notes: p.notes || ''
